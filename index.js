@@ -1,9 +1,9 @@
 const connection = require('./db/connection')
 const inquirer = require('inquirer')
-require('console.table') 
+require('console.table')
 
 if (connection) {
-    console.log("Datebase is running")
+    console.log("Datebase has been successfully Initialized")
     mainQuestion()
 }
 
@@ -13,7 +13,7 @@ function mainQuestion() {
             type: 'list',
             name: 'mainQuestion',
             message: "What would you like to do?",
-            choices : ['View Roles', 'View Employees', 'View Departments', 'Add Department','Add Role', 'Add Employee', 'Update Employee', 'Quit']
+            choices: ['View Roles', 'View Employees', 'View Departments', 'Add Department', 'Add Role', 'Add Employee', 'Update Employee', 'Quit']
         }
     ]).then(answer => {
         switch (answer.mainQuestion) {
@@ -36,15 +36,13 @@ function mainQuestion() {
                 addEmployee()
                 break;
             case 'Update Employee':
-                updateEmployee()
+                updateEmployeeRole()
                 break;
             default:
                 connection.end()
         }
     })
 }
-
-//    connection.query("SELECT favorite_books.book_name AS name, book_prices.price AS price FROM favorite_books JOIN book_prices ON favorite_books.book_price = book_prices.id")
 
 function viewRoles() {
     console.log('view all tables in a join')
@@ -87,15 +85,79 @@ function addRole() {
 
 
 function addEmployee() {
-    console.log('addEmployee')
-    mainQuestion()
+    inquirer
+        .prompt([
+            {
+                type: 'input',
+                name: 'firstName',
+                message: 'Enter the first name of the employee you want to add:'
+            },
+            {
+                type: 'input',
+                name: 'lastName',
+                message: 'Enter the last name of the employee you want to add:'
+            },
+            {
+                type: 'input',
+                name: 'newRole',
+                message: 'Enter the new Employee role:'
+            },
+            {
+                type: 'input',
+                name: 'newManager',
+                message: 'Enter the manager: (Press Enter if Employee is a manager)'
+            },
+        ])
+        .then(answers => {
+            const { firstName, lastName, newRole, newManager } = answers;
+
+            let updateStatement = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${firstName}', '${lastName}', ${newRole}, ${newManager})`;
+
+            connection.query(updateStatement, (error, results) => {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log(`Successfully created ${firstName} ${lastName} to role ID# ${newRole}`);
+                }
+            });
+            mainQuestion()
+        });
 }
 
 
-function updateEmployee() {
-    console.log('updateEmployee')
-    //query emp id from user
-    mainQuestion()
+function updateEmployeeRole() {
+    inquirer
+        .prompt([
+            {
+                type: 'input',
+                name: 'firstName',
+                message: 'Enter the first name of the employee you want to update:'
+            },
+            {
+                type: 'input',
+                name: 'lastName',
+                message: 'Enter the last name of the employee you want to update:'
+            },
+            {
+                type: 'input',
+                name: 'newRole',
+                message: 'Enter the new Employee role:'
+            },
+        ])
+        .then(answers => {
+            const { firstName, lastName, newRole } = answers;
+
+            let updateStatement = `UPDATE employee SET role_id = '${newRole}' WHERE first_name = '${firstName}' AND last_name = '${lastName}'`;
+
+            connection.query(updateStatement, (error, results) => {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log(`Successfully updated ${firstName} ${lastName} to role ID# ${newRole}`);
+                }
+            });
+            mainQuestion()
+        });
 }
 
 

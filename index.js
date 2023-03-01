@@ -4,19 +4,51 @@ require('console.table')
 
 if (connection) {
     console.log("Datebase has been successfully Initialized")
-    mainQuestion()
+    mainMenu()
 }
 
-function mainQuestion() {
+function mainMenu() {
     inquirer.prompt([
         {
             type: 'list',
-            name: 'mainQuestion',
-            message: "What would you like to do?",
-            choices: ['View Roles', 'View Employees', 'View Departments', 'Add Department', 'Add Role', 'Add Employee', 'Update Employee', 'Quit']
+            name: 'mainMenu',
+            message: `\n
+            #######        #######                      
+            #       #    #    #    #####    ##   #    # 
+            #       ##  ##    #    #    #  #  #  #   #  
+            #####   # ## #    #    #    # #    # ####   
+            #       #    #    #    #####  ###### #  #   
+            #       #    #    #    #   #  #    # #   #  
+            ####### #    #    #    #    # #    # #    # \n\n\nWelcome to EmTrack\nMain Menu\nWhat would you like to do?\n`,
+            choices: ['View Records', 'Add A New Record', 'Update A Record', 'Quit']
         }
     ]).then(answer => {
-        switch (answer.mainQuestion) {
+        switch (answer.mainMenu) {
+            case 'View Records':
+                viewMenu()
+                break;
+            case 'Add A New Record':
+                addMenu()
+                break;
+            case 'Update A Record':
+                updateEmployeeRole()
+                break;
+            default:
+                connection.end()
+        }
+    })
+}
+
+function viewMenu() {
+    inquirer.prompt([
+        {
+            type: 'list',
+            name: 'viewMenu',
+            message: "\nView Records Menu\nPlease Select an option to continue\n",
+            choices: ['View Roles', 'View Employees', 'View Departments', 'Main Menu']
+        }
+    ]).then(answer => {
+        switch (answer.viewMenu) {
             case 'View Roles':
                 viewRoles()
                 break;
@@ -26,6 +58,22 @@ function mainQuestion() {
             case 'View Departments':
                 viewDeparments()
                 break;
+            default:
+                mainMenu()
+        }
+    })
+}
+
+function addMenu() {
+    inquirer.prompt([
+        {
+            type: 'list',
+            name: 'addMenu',
+            message: `\nAdd Record Menu\nPlease select an option to continue`,
+            choices: ['Add Department', 'Add Role', 'Add Employee', 'Main Menu']
+        }
+    ]).then(answer => {
+        switch (answer.addMenu) {
             case 'Add Department':
                 addDepartment()
                 break;
@@ -35,11 +83,8 @@ function mainQuestion() {
             case 'Add Employee':
                 addEmployee()
                 break;
-            case 'Update Employee':
-                updateEmployeeRole()
-                break;
             default:
-                connection.end()
+                mainMenu()
         }
     })
 }
@@ -48,39 +93,95 @@ function viewRoles() {
     console.log('view all tables in a join')
     connection.query("SELECT role.title, role.salary, department.name FROM role JOIN department ON role.department_id = department.id", (err, data) => {
         if (err) throw err;
-        console.log("")
+        console.log("\n\n")
         console.table(data)
+        console.log("\n\nPress Enter to continue...\n")
     })
-    mainQuestion()
+    mainMenu()
 }
 
 function viewEmployees() {
     console.log('view only employees table');
     connection.query("SELECT * FROM employee", (err, data) => {
         if (err) throw err;
+        console.log("\n\n")
         console.table(data)
+        console.log("\n\nPress Enter to continue...\n")
     })
-    mainQuestion()
+    mainMenu()
 }
 
 function viewDeparments() {
     connection.query("SELECT * FROM department", (err, data) => {
         if (err) throw err;
+        console.log("\n\n")
         console.table(data)
+        console.log("\n\nPress Enter to continue...\n")
     })
-    mainQuestion()
+    mainMenu()
 }
 
 
 function addDepartment() {
-    console.log('addDepartment')
-    mainQuestion()
+    inquirer
+        .prompt([
+            {
+                type: 'input',
+                name: 'name',
+                message: 'Enter the department name:'
+            },
+        ])
+        .then(answers => {
+            const { name } = answers;
+
+            let updateStatement = `INSERT INTO department (name) VALUES (?)`;
+
+            connection.query(updateStatement, [name], (error, results) => {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log(`Successfully created the ${name}`);
+                }
+                addMenu();
+            });
+        });
 }
 
 
+
 function addRole() {
-    console.log('addRole')
-    mainQuestion()
+    inquirer
+        .prompt([
+            {
+                type: 'input',
+                name: 'title',
+                message: 'Enter the role title:'
+            },
+            {
+                type: 'input',
+                name: 'salary',
+                message: 'Enter role salary:'
+            },
+            {
+                type: 'input',
+                name: 'department',
+                message: 'Enter the department:'
+            },
+        ])
+        .then(answers => {
+            const { title, salary, department } = answers;
+
+            let updateStatement = `INSERT INTO role (title, salary, department_id) VALUES ('${title}', '${salary}', '${department}')`;
+
+            connection.query(updateStatement, (error, results) => {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log(`Successfully created ${title} ${salary} to department ID# ${department}`);
+                }
+            });
+            addMenu()
+        });
 }
 
 
@@ -89,38 +190,38 @@ function addEmployee() {
         .prompt([
             {
                 type: 'input',
-                name: 'firstName',
+                name: 'nameFirst',
                 message: 'Enter the first name of the employee you want to add:'
             },
             {
                 type: 'input',
-                name: 'lastName',
+                name: 'nameLast',
                 message: 'Enter the last name of the employee you want to add:'
             },
             {
                 type: 'input',
-                name: 'newRole',
+                name: 'role',
                 message: 'Enter the new Employee role:'
             },
             {
                 type: 'input',
-                name: 'newManager',
-                message: 'Enter the manager: (Press Enter if Employee is a manager)'
+                name: 'manager',
+                message: 'Enter the manager ID#:'
             },
         ])
         .then(answers => {
-            const { firstName, lastName, newRole, newManager } = answers;
+            const { nameFirst, nameLast, role, manager } = answers;
 
-            let updateStatement = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${firstName}', '${lastName}', ${newRole}, ${newManager})`;
+            let updateStatement = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${nameFirst}', '${nameLast}', '${role}', '${manager}')`;
 
             connection.query(updateStatement, (error, results) => {
                 if (error) {
                     console.error(error);
                 } else {
-                    console.log(`Successfully created ${firstName} ${lastName} to role ID# ${newRole}`);
+                    console.log(`Successfully created ${nameFirst} ${nameLast} to role ID# ${role}`);
                 }
             });
-            mainQuestion()
+            addMenu()
         });
 }
 
@@ -153,10 +254,10 @@ function updateEmployeeRole() {
                 if (error) {
                     console.error(error);
                 } else {
-                    console.log(`Successfully updated ${firstName} ${lastName} to role ID# ${newRole}`);
+                    console.log(`\n\nSuccessfully updated ${firstName} ${lastName} to role ID# ${newRole}\n\n`);
                 }
             });
-            mainQuestion()
+            mainMenu()
         });
 }
 
